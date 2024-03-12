@@ -1,0 +1,14 @@
+variables:
+  component: destination/arangodb
+  binary: arangodb
+
+project_name: plugins/destination/arangodb
+
+monorepo:
+  tag_prefix: plugins-destination-arangodb-
+  dir: plugins/destination/arangodb
+
+includes:
+  - from_file:
+      # Relative to the directory Go Releaser is run from (which is the root of the repository)
+      path: ./plugins/.goreleaser.yaml

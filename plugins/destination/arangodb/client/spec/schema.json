@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/cloudquery/cloudquery/plugins/destination/arangodb/client/spec",
+  "$ref": "#/$defs/Spec",
+  "$defs": {
+    "Spec": {
+      "properties": {
+        "hostname": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Hostname of the ArangoDB server. Prefix with 'http://' for localhost or 'https://' for remote servers."
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535,
+          "description": "Port on which the ArangoDB server is running."
+        },
+        "dbName": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Name of the database to sync the data to."
+        },
+        "username": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Username for authenticating with the ArangoDB server."
+        },
+        "password": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Password for authenticating with the ArangoDB server."
+        },
+        "batch_size": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Maximum number of documents to batch together for writing in a single operation.",
+          "default": 1000
+        },
+        "batch_size_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Maximum size of documents (in bytes) to batch together for writing in a single operation.",
+          "default": 4194304
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "hostname",
+        "dbName",
+        "username",
+        "password"
+      ]
+    }
+  }
+}
