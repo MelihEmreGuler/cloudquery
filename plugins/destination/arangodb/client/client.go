@@ -43,7 +43,6 @@ func New(ctx context.Context, logger zerolog.Logger, spec []byte, _ plugin.NewCl
 		return nil, fmt.Errorf("failed to create HTTP connection for ArangoDB: %w", err)
 	}
 
-	// burası patlarsa pointeri kaldırmayı deneyebilirsin
 	c.client, err = driver.NewClient(driver.ClientConfig{
 		Connection:     conn,
 		Authentication: driver.BasicAuthentication(c.spec.Username, c.spec.Password),
