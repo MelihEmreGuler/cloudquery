@@ -37,7 +37,7 @@ func New(ctx context.Context, logger zerolog.Logger, spec []byte, _ plugin.NewCl
 	// Connect to ArangoDB
 	// prefix the hostname with http://, if we conncting to a remote server the prefix will be https://
 	conn, err := http.NewConnection(http.ConnectionConfig{
-		Endpoints: []string{fmt.Sprintf("http://%s:%d", c.spec.Hostname, c.spec.Port)},
+		Endpoints: []string{fmt.Sprintf("http://%s:%s", c.spec.Hostname, c.spec.Port)},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create HTTP connection for ArangoDB: %w", err)
@@ -51,7 +51,17 @@ func New(ctx context.Context, logger zerolog.Logger, spec []byte, _ plugin.NewCl
 		return nil, fmt.Errorf("failed to create ArangoDB client: %w", err)
 	}
 
-	// BatchWriter nesnesi oluştur
+	// To check the database exists or not
+	exist, err := c.client.DatabaseExists(ctx, c.spec.DbName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check if database exists: %w", err)
+	}
+	if !exist {
+		return nil, fmt.Errorf("database %s does not exist", c.spec.DbName)
+
+	}
+
+	// Create a BatchWriter object
 	c.writer, err = batchwriter.New(c, batchwriter.WithBatchSize(c.spec.BatchSize), batchwriter.WithBatchSizeBytes(c.spec.BatchSizeBytes), batchwriter.WithLogger(c.logger))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create batch writer: %w", err)

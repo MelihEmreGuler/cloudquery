@@ -7,7 +7,6 @@ import (
 	"github.com/apache/arrow/go/v15/arrow/array"
 	"github.com/apache/arrow/go/v15/arrow/memory"
 	"github.com/arangodb/go-driver"
-	"github.com/arangodb/go-driver/http"
 	"github.com/cloudquery/plugin-sdk/v4/schema"
 )
 
@@ -42,28 +41,14 @@ func (c *Client) reverseTransformField(f arrow.Field, bldr array.Builder, val in
 	case *array.StringBuilder:
 		b.Append(val.(string))
 	default:
-		return fmt.Errorf("unsupported type %T with builder %T", val, bldr)
+		return fmt.Errorf("unsupported type %T with builder %T and column %s", val, bldr, f.Name)
 	}
 	return nil
 }
 
 func (c *Client) Read(ctx context.Context, table *schema.Table, res chan<- arrow.Record) error {
-	conn, err := http.NewConnection(http.ConnectionConfig{
-		Endpoints: []string{fmt.Sprintf("http://%s:%d", c.spec.Hostname, c.spec.Port)},
-	})
-	if err != nil {
-		return fmt.Errorf("failed to create HTTP connection for ArangoDB: %w", err)
-	}
 
-	arangoClient, err := driver.NewClient(driver.ClientConfig{
-		Connection:     conn,
-		Authentication: driver.BasicAuthentication(c.spec.Username, c.spec.Password),
-	})
-	if err != nil {
-		return fmt.Errorf("failed to create ArangoDB client: %w", err)
-	}
-
-	db, err := arangoClient.Database(ctx, c.spec.DbName)
+	db, err := c.client.Database(ctx, c.spec.DbName)
 	if err != nil {
 		return fmt.Errorf("failed to get database: %w", err)
 	}
@@ -77,7 +62,7 @@ func (c *Client) Read(ctx context.Context, table *schema.Table, res chan<- arrow
 	defer cursor.Close()
 	for {
 		var doc map[string]interface{}
-		_, err := cursor.ReadDocument(ctx, &doc)
+		_, err = cursor.ReadDocument(ctx, &doc)
 		if driver.IsNoMoreDocuments(err) {
 			break
 		} else if err != nil {

@@ -15,9 +15,9 @@ type Spec struct {
 	Hostname string `json:"hostname" jsonschema:"required,minLength=1"`
 
 	// Port on which the ArangoDB server is running.
-	Port int `json:"port" jsonschema:"required,minimum=1,maximum=65535"`
+	Port string `json:"port" jsonschema:"required,minimum=1,maximum=65535"`
 
-	//Name of the database to sync the data to.
+	//DbName of the database to sync the data to.
 	DbName string `json:"dbName" jsonschema:"required,minLength=1"`
 
 	//Username for authenticating with the ArangoDB server.
@@ -49,7 +49,7 @@ func (s *Spec) Validate() error {
 	if s.Hostname == "" {
 		return fmt.Errorf("hostname is required")
 	}
-	if s.Port == 0 {
+	if s.Port == "" {
 		return fmt.Errorf("port is required")
 	}
 	if s.DbName == "" {
