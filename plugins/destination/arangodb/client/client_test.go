@@ -13,11 +13,12 @@ import (
 )
 
 const (
-	defaultHostname = "localhost"
-	defaultPort     = "8529"
-	defaultDbName   = "_system"
-	defaultUsername = "root"
-	defaultPassword = "arangopass"
+	defaultHostname   = "localhost"
+	defaultPort       = "8529"
+	defaultDbName     = "_system"
+	defaultUsername   = "root"
+	defaultPassword   = "arangopass"
+	defaultCollection = "test"
 )
 
 func getenv(key, fallback string) string {
@@ -32,35 +33,32 @@ func TestPlugin(t *testing.T) {
 	ctx := context.Background()
 	p := plugin.NewPlugin("arangodb", "development", New)
 	s := &Spec{
-		Hostname: getenv("CQ_DEST_ARANGODB_HOSTNAME", defaultHostname),
-		Port:     getenv("CQ_DEST_ARANGODB_PORT", defaultPort),
-		DbName:   getenv("CQ_DEST_ARANGODB_DBNAME", defaultDbName),
-		Username: getenv("CQ_DEST_ARANGODB_USERNAME", defaultUsername),
-		Password: getenv("CQ_DEST_ARANGODB_PASSWORD", defaultPassword),
+		Hostname:   getenv("CQ_DEST_ARANGODB_HOSTNAME", defaultHostname),
+		Port:       getenv("CQ_DEST_ARANGODB_PORT", defaultPort),
+		DbName:     getenv("CQ_DEST_ARANGODB_DBNAME", defaultDbName),
+		Username:   getenv("CQ_DEST_ARANGODB_USERNAME", defaultUsername),
+		Password:   getenv("CQ_DEST_ARANGODB_PASSWORD", defaultPassword),
+		Collection: getenv("CQ_DEST_ARANGODB_COLLECTION", defaultCollection),
+		//Protocol:   "https",
 	}
 	s.SetDefaults()
 	require.NoError(t, s.Validate())
+
 	b, err := json.Marshal(s)
-	require.NoError(t, err)
-
-	err = p.Init(ctx, b, plugin.NewClientOptions{})
-	require.NoError(t, err)
-
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := p.Init(ctx, b, plugin.NewClientOptions{}); err != nil {
+		t.Fatal(err)
+	}
 	plugin.TestWriterSuiteRunner(t,
 		p,
 		plugin.WriterTestSuiteTests{
-			// Although we do support migrations, the old data can persist for the tables where PK is changed.
-			SkipMigrate:      true,
 			SkipDeleteRecord: true,
-			SafeMigrations: plugin.SafeMigrations{
-				AddColumn:    true,
-				RemoveColumn: true,
-			},
+			SkipMigrate:      true,
 		},
-		plugin.WithTestIgnoreNullsInLists(),
 		plugin.WithTestDataOptions(schema.TestSourceOptions{
-			TimePrecision: time.Microsecond,
-			SkipLists:     true,
+			TimePrecision: time.Millisecond,
 		}),
 	)
 }

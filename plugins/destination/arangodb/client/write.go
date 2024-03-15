@@ -3,56 +3,58 @@ package client
 import (
 	"context"
 	"fmt"
-	"github.com/apache/arrow/go/v15/arrow"
+	"strings"
+
 	"github.com/cloudquery/plugin-sdk/v4/message"
 	"github.com/cloudquery/plugin-sdk/v4/schema"
 )
-
-package client
-
-import (
-"context"
-"fmt"
-
-"github.com/arangodb/go-driver"
-"github.com/cloudquery/plugin-sdk/v4/message"
-"github.com/cloudquery/plugin-sdk/v4/schema"
-)
-
-func (c *Client) transformValues(r arrow.Record, cqTimeIndex int) []map[string]any {
-	results := make([]map[string]any, r.NumRows())
-
-	for i := range results {
-		results[i] = make(map[string]any, r.NumCols())
-	}
-	sc := r.Schema()
-	for i := 0; i < int(r.NumCols()); i++ {
-		col := r.Column(i)
-		transformed := c.transformArr(col, i == cqTimeIndex)
-		for l := 0; l < col.Len(); l++ {
-			results[l][sc.Field(i).Name] = transformed[l]
-		}
-	}
-	return results
-}
 
 func (c *Client) WriteTableBatch(ctx context.Context, tableName string, msgs message.WriteInserts) error {
 	if len(msgs) == 0 {
 		return nil
 	}
 
-	// Veritabanı ve koleksiyonun alınması
-	db, err := c.client.Database(ctx, c.spec.DbName)
+	table, err := schema.NewTableFromArrowSchema(msgs[0].Record.Schema())
 	if err != nil {
-		return fmt.Errorf("failed to get database: %w", err)
-	}
-	col, err := db.Collection(ctx, tableName)
-	if err != nil {
-		return fmt.Errorf("failed to get collection: %w", err)
+		return err
 	}
 
+	// open a new connection to the database
+	db, err := c.Database(ctx)
+	if err != nil {
+		return err
+	}
 
-	return nil
+	rows := make([]map[string]any, 0, len(msgs))
+	for i := range msgs {
+		rows = append(rows, transformValues(msgs[i].Record)...)
+	}
+	var sb strings.Builder
+	pks := table.PrimaryKeys()
+	if len(pks) == 0 {
+		// If there is no primary key, direct INSERT is used
+		sb.WriteString("FOR row IN @rows INSERT row INTO ")
+		sb.WriteString(c.spec.Collection)
+	} else {
+		// If the primary key exists, we can update or add unique records using UPSERT
+		sb.WriteString("FOR row IN @rows UPSERT { ")
+		for i, pk := range pks {
+			if i > 0 {
+				sb.WriteString(", ")
+			}
+			sb.WriteString(pk + ": row." + pk)
+		}
+		sb.WriteString(" } INSERT row UPDATE row INTO ")
+		sb.WriteString(c.spec.Collection)
+	}
+
+	stmt := sb.String()
+	c.logger.Debug().Str("stmt", stmt).Any("rows", rows).Msg("Executing statement")
+	cursor, err := db.Query(ctx, stmt, map[string]interface{}{"rows": rows})
+	if err != nil {
+		return fmt.Errorf("failed to execute query: %w", err)
+	}
+	return cursor.Close()
 }
 
 func (c *Client) Write(ctx context.Context, msgs <-chan message.WriteMessage) error {

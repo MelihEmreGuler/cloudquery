@@ -31,6 +31,20 @@
           "minLength": 1,
           "description": "Password for authenticating with the ArangoDB server."
         },
+        "collection": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Name of the collection to sync the data to."
+        },
+        "protocol": {
+          "type": "string",
+          "enum": [
+            "http",
+            "https"
+          ],
+          "description": "Protocol to use for connecting to the ArangoDB server.",
+          "default": "http"
+        },
         "batch_size": {
           "type": "integer",
           "minimum": 1,

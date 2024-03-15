@@ -37,7 +37,7 @@ func New(ctx context.Context, logger zerolog.Logger, spec []byte, _ plugin.NewCl
 	// Connect to ArangoDB
 	// prefix the hostname with http://, if we conncting to a remote server the prefix will be https://
 	conn, err := http.NewConnection(http.ConnectionConfig{
-		Endpoints: []string{fmt.Sprintf("http://%s:%s", c.spec.Hostname, c.spec.Port)},
+		Endpoints: []string{fmt.Sprintf("%s://%s:%s", c.spec.Protocol, c.spec.Hostname, c.spec.Port)},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create HTTP connection for ArangoDB: %w", err)
@@ -76,4 +76,19 @@ func (c *Client) Close(ctx context.Context) error {
 	}
 	// If you need to close the connection to ArangoDB here, you can add
 	return nil
+}
+
+func (c *Client) Database(ctx context.Context) (driver.Database, error) {
+	// Check client connection
+	if c.client == nil {
+		return nil, fmt.Errorf("ArangoDB client is not initialized")
+	}
+
+	// Access the database
+	db, err := c.client.Database(ctx, c.spec.DbName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to access ArangoDB database '%s': %w", c.spec.DbName, err)
+	}
+
+	return db, nil
 }
