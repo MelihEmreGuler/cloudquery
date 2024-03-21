@@ -15,10 +15,10 @@ func (c *Client) DeleteStale(ctx context.Context, msgs message.WriteDeleteStales
 			FOR doc IN %s 
 			FILTER doc.%s == @sourceName AND doc.%s < @syncTime 
 			REMOVE doc IN %s`,
-			msg.TableName,
+			c.spec.Collection,
 			schema.CqSourceNameColumn.Name,
 			schema.CqSyncTimeColumn.Name,
-			msg.TableName,
+			c.spec.Collection,
 		)
 
 		bindVars := map[string]interface{}{

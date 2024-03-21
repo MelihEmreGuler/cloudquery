@@ -33,7 +33,12 @@ func (c *Client) reverseTransformField(f arrow.Field, bldr array.Builder, val in
 	case *array.Int32Builder:
 		b.Append(val.(int32))
 	case *array.Int64Builder:
-		b.Append(val.(int64))
+		if floatValue, ok := val.(float64); ok {
+			// float64'ten int64'e dönüştürme
+			b.Append(int64(floatValue))
+		} else {
+			return fmt.Errorf("value for %s is not a float64, cannot convert to int64", f.Name)
+		}
 	case *array.Float32Builder:
 		b.Append(val.(float32))
 	case *array.Float64Builder:
@@ -53,7 +58,7 @@ func (c *Client) Read(ctx context.Context, table *schema.Table, res chan<- arrow
 		return fmt.Errorf("failed to get database: %w", err)
 	}
 
-	query := fmt.Sprintf("FOR d IN %s RETURN d", table.Name)
+	query := fmt.Sprintf("FOR d IN %s RETURN d", c.spec.Collection)
 	cursor, err := db.Query(ctx, query, nil)
 	if err != nil {
 		return fmt.Errorf("failed to query table %s: %w", table.Name, err)
