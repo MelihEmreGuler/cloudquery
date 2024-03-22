@@ -34,7 +34,7 @@ func (c *Client) reverseTransformField(f arrow.Field, bldr array.Builder, val in
 		b.Append(val.(int32))
 	case *array.Int64Builder:
 		if floatValue, ok := val.(float64); ok {
-			// float64'ten int64'e dönüştürme
+			// convert from float64 to int64
 			b.Append(int64(floatValue))
 		} else {
 			return fmt.Errorf("value for %s is not a float64, cannot convert to int64", f.Name)

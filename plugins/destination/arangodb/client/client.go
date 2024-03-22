@@ -89,6 +89,13 @@ func (c *Client) Database(ctx context.Context) (driver.Database, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to access ArangoDB database '%s': %w", c.spec.DbName, err)
 	}
+	exist, err := db.CollectionExists(ctx, c.spec.Collection)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check if collection exists: %w", err)
+	}
+	if !exist {
+		return nil, fmt.Errorf("collection %s does not exist", c.spec.Collection)
+	}
 
 	return db, nil
 }

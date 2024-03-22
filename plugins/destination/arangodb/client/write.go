@@ -4,12 +4,21 @@ import (
 	"context"
 	"fmt"
 	"github.com/arangodb/go-driver"
-	"github.com/google/uuid"
 	"strings"
 
 	"github.com/cloudquery/plugin-sdk/v4/message"
 	"github.com/cloudquery/plugin-sdk/v4/schema"
 )
+
+func (c *Client) Write(ctx context.Context, msgs <-chan message.WriteMessage) error {
+	if err := c.writer.Write(ctx, msgs); err != nil {
+		return err
+	}
+	if err := c.writer.Flush(ctx); err != nil {
+		return fmt.Errorf("failed to flush: %w", err)
+	}
+	return nil
+}
 
 func (c *Client) WriteTableBatch(ctx context.Context, tableName string, msgs message.WriteInserts) error {
 	if len(msgs) == 0 {
@@ -44,16 +53,23 @@ func (c *Client) WriteTableBatch(ctx context.Context, tableName string, msgs mes
 		pks = table.Columns.Names()
 	}
 
-	c.logger.Debug().Any("rows", rows).Msg("Executing statement")
+	c.logger.Debug().Str("table name:", tableName).Msg("Executing statement")
 
 	if err = upsertDocuments(ctx, db, c.spec.Collection, rows, pks); err != nil {
 		return err
 	}
+	c.logger.Debug().Str("table name:", tableName).Msg("Upserted documents successfully")
 	return nil
 }
 
+// upsertDocuments checks if the documents already exist in the collection and updates them if they do, otherwise inserts them.
 func upsertDocuments(ctx context.Context, db driver.Database, collectionName string, docs []map[string]any, keys []string) error {
+
 	for _, doc := range docs {
+		// Clear hash indexes
+		/*if err := clearCollectionIndexes(ctx, db, collectionName, "hash"); err != nil {
+			fmt.Println(fmt.Errorf("error while upserting documents: %w", err))
+		}*/
 		// Create key filter and search document for UPSERT query
 		keyFilterParts := make([]string, 0, len(keys))
 		for _, key := range keys {
@@ -61,7 +77,6 @@ func upsertDocuments(ctx context.Context, db driver.Database, collectionName str
 		}
 		keyFilter := "{" + strings.Join(keyFilterParts, ", ") + "}"
 
-		// UPSERT sorgusunu hazırla
 		query := fmt.Sprintf(`
 			UPSERT %s
 			INSERT @doc
@@ -86,22 +101,39 @@ func upsertDocuments(ctx context.Context, db driver.Database, collectionName str
 		if err = cur.Close(); err != nil {
 			return fmt.Errorf("failed to close cursor: %w", err)
 		} // Close Cursor
+		fmt.Println(fmt.Sprintf("Upserted table: %v", doc["label"]))
 	}
 	fmt.Println("Upserted documents successfully")
 
 	return nil
 }
-func GenerateUUID() string {
-	newUUID := uuid.New()
-	return newUUID.String()
-}
 
-func (c *Client) Write(ctx context.Context, msgs <-chan message.WriteMessage) error {
-	if err := c.writer.Write(ctx, msgs); err != nil {
-		return err
+// clearCollectionIndexes removes given indexes from the collection.
+func clearCollectionIndexes(ctx context.Context, db driver.Database, collectionName string, indexName string) error {
+	collection, err := db.Collection(ctx, collectionName)
+	if err != nil {
+		return fmt.Errorf("failed to get collection: %w", err)
 	}
-	if err := c.writer.Flush(ctx); err != nil {
-		return fmt.Errorf("failed to flush: %w", err)
+
+	// Get indexes
+	indexes, err := collection.Indexes(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get indexes: %w", err)
+	}
+
+	for _, index := range indexes {
+		fmt.Println("index name: ", index.Name(), "type: ", index.Type())
+	}
+
+	// Remove hash indexes
+	for _, index := range indexes {
+		if string(index.Type()) != indexName {
+			continue
+		}
+		if err = index.Remove(ctx); err != nil {
+			fmt.Println("Index removed:", index.Name())
+			return fmt.Errorf("failed to drop index %s - %s: %w", index.Name(), index.ID(), err)
+		}
 	}
 	return nil
 }

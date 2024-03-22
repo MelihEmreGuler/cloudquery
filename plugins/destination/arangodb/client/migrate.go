@@ -15,7 +15,7 @@ type IndexOptions struct {
 }
 
 func (c *Client) MigrateTables(ctx context.Context, messages message.WriteMigrateTables) error {
-	if len(messages) == 0 {
+	/*if len(messages) == 0 {
 		return nil
 	}
 
@@ -33,10 +33,13 @@ func (c *Client) MigrateTables(ctx context.Context, messages message.WriteMigrat
 		if err = c.tryCreateIndex(ctx, col, m); err != nil {
 			return fmt.Errorf("failed to create index for %q: %w", m.Table.Name, err)
 		}
-	}
+	}*/
 	return nil
 }
 
+// tryCreateIndex creates an index for the given collection if it does not already exist.
+// but it should not be used if we want to save data in a single collection.
+// if we want to use multiple collections we can use this function to create indexes.
 func (c *Client) tryCreateIndex(ctx context.Context, col driver.Collection, migrate *message.WriteMigrateTable) error {
 	indexOptions := createIndexOptions(migrate.Table)
 	if indexOptions == nil {
