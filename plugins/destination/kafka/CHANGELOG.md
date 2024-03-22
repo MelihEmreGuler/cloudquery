@@ -1,5 +1,22 @@
 # Changelog
 
+## [3.3.4](https://github.com/cloudquery/cloudquery/compare/plugins-destination-kafka-v3.3.3...plugins-destination-kafka-v3.3.4) (2024-03-19)
+
+
+### Bug Fixes
+
+* **deps:** Update module github.com/cloudquery/plugin-sdk/v4 to v4.34.0 ([#17203](https://github.com/cloudquery/cloudquery/issues/17203)) ([4b128b6](https://github.com/cloudquery/cloudquery/commit/4b128b6722dea883d66458f2f3c831184926353d))
+* **deps:** Update module github.com/cloudquery/plugin-sdk/v4 to v4.34.1 ([#17220](https://github.com/cloudquery/cloudquery/issues/17220)) ([08d4950](https://github.com/cloudquery/cloudquery/commit/08d49504aee10f6883e1bd4f7e1102a274c8ee81))
+* **deps:** Update module github.com/cloudquery/plugin-sdk/v4 to v4.34.2 ([#17229](https://github.com/cloudquery/cloudquery/issues/17229)) ([41ed721](https://github.com/cloudquery/cloudquery/commit/41ed721cfa435a4937f3022501dd4d45a3a880b0))
+* **deps:** Update module google.golang.org/protobuf to v1.33.0 [SECURITY] ([#17140](https://github.com/cloudquery/cloudquery/issues/17140)) ([9a5b705](https://github.com/cloudquery/cloudquery/commit/9a5b7054a3eadecaa449eacaf04a0815b82f9900))
+
+## [3.3.3](https://github.com/cloudquery/cloudquery/compare/plugins-destination-kafka-v3.3.2...plugins-destination-kafka-v3.3.3) (2024-03-12)
+
+
+### Bug Fixes
+
+* **deps:** Update module github.com/cloudquery/plugin-sdk/v4 to v4.32.1 ([#17044](https://github.com/cloudquery/cloudquery/issues/17044)) ([d3592e7](https://github.com/cloudquery/cloudquery/commit/d3592e7f3ae600655778eb508aeccfa4e5b74e8c))
+
 ## [3.3.2](https://github.com/cloudquery/cloudquery/compare/plugins-destination-kafka-v3.3.1...plugins-destination-kafka-v3.3.2) (2024-03-05)
 
 
