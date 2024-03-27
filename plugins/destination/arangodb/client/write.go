@@ -43,7 +43,10 @@ func (c *Client) WriteTableBatch(ctx context.Context, tableName string, msgs mes
 		for _, row := range transformedRows {
 			// Add the table name to each row as a label
 			row["label"] = tableName
-
+			// manipulate the key to be used as _key in arangodb
+			row["_key"] = row["_cq_id"]
+			// remove the _cq_id from the document
+			// delete(row, "_cq_id")
 			rows = append(rows, row)
 		}
 	}
@@ -66,12 +69,10 @@ func (c *Client) WriteTableBatch(ctx context.Context, tableName string, msgs mes
 func upsertDocuments(ctx context.Context, db driver.Database, collectionName string, docs []map[string]any, keys []string) error {
 
 	for _, doc := range docs {
-		// Clear hash indexes
-		/*if err := clearCollectionIndexes(ctx, db, collectionName, "hash"); err != nil {
-			fmt.Println(fmt.Errorf("error while upserting documents: %w", err))
-		}*/
 		// Create key filter and search document for UPSERT query
 		keyFilterParts := make([]string, 0, len(keys))
+		//add the _key to the key filter for upsert query
+		keys = append(keys, "_key")
 		for _, key := range keys {
 			keyFilterParts = append(keyFilterParts, fmt.Sprintf(`"%s": @%s`, key, key))
 		}
@@ -92,6 +93,8 @@ func upsertDocuments(ctx context.Context, db driver.Database, collectionName str
 		for _, key := range keys {
 			bindVars[key] = doc[key]
 		}
+		//remove the _cq_id from the document
+		//delete(doc, "_cq_id")
 
 		// Run the query
 		cur, err := db.Query(ctx, query, bindVars)
