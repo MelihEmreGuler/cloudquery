@@ -14,6 +14,7 @@ type IndexOptions struct {
 	Sparse bool
 }
 
+// MigrateTables creates indexes for the given tables. (comment out when syncing data to multiple collections)
 func (c *Client) MigrateTables(ctx context.Context, messages message.WriteMigrateTables) error {
 	/*if len(messages) == 0 {
 		return nil
